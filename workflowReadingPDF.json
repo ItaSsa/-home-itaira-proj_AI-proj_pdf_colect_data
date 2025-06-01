@@ -1,0 +1,298 @@
+{
+  "name": "workflowReadingPDF",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "470f71cd-2831-4f5e-8a13-95236830b678",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -680,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1H9T5G4KRekjtjJloL6I4DLUW-TQUb1E5",
+          "mode": "list",
+          "cachedResultName": "corporate_catalogue_2023.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1H9T5G4KRekjtjJloL6I4DLUW-TQUb1E5/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "id": "8d864a23-1e1d-4e6f-a8d7-0deffaa71b2c",
+      "name": "Google Drive - Baixar PDF",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -160
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zHT1SScLbjN1yWM8",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://v2.convertapi.com/convert/pdf/to/txt",
+        "jsonParameters": true,
+        "options": {
+          "bodyContentType": "multipart-form-data"
+        },
+        "sendBinaryData": true,
+        "headerParametersJson": "{\n  \"Authorization\": \"Bearer c9lU6wNcAnycMeG77MQZwzudNZXh059z\"\n}"
+      },
+      "id": "d7d3fd64-2a46-4924-bede-00a4b694a06c",
+      "name": "ConvertAPI - PDF para Texto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=`\nYou will receive the raw text from a product catalog.\n\nPlease extract as many product entries as possible that include the phrase \"REF\". For each entry, return an object with the following properties:\n\n- \"name\": the product's name (line immediately before the REF)\n- \"REF\": the value that appears next to \"REF\" (colon optional)\n\nReturn all matches as a valid JSON array.\n\n⚠️ Return ONLY the JSON array. No markdown, no comments, no explanations.\n\nHere is the text:\n\n{{$json[\"text\"]}}\n`",
+        "hasOutputParser": true,
+        "options": {
+          "maxIterations": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        320,
+        -240
+      ],
+      "id": "e74c736b-8e1d-48ae-a8fa-455cd7ef03db",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "gpt-4"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        320,
+        -20
+      ],
+      "id": "e6d89c9e-ea5f-4f03-94c9-c802fc371d5e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "b2LAGK5hGbSCOEoV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1gvGYYO86BemBGxKlldABYP9ouwTQQa2i2IMy_BSpV6U",
+          "mode": "list",
+          "cachedResultName": "output_catalog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gvGYYO86BemBGxKlldABYP9ouwTQQa2i2IMy_BSpV6U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Página1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gvGYYO86BemBGxKlldABYP9ouwTQQa2i2IMy_BSpV6U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.name }}",
+            "ref": "={{ $json.REF }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sku",
+              "displayName": "sku",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ref",
+              "displayName": "ref",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1000,
+        -300
+      ],
+      "id": "8f47f1f5-eb36-41b3-8ddb-0dac8e405341",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jz6CWvIIgUBQc9cw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const base64 = items[0].json.Files[0].FileData;\nconst decoded = Buffer.from(base64, 'base64').toString('utf-8');\n\nreturn [{ json: { text: decoded } }];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -460
+      ],
+      "id": "d2224299-0933-4787-8193-b5ce4a8682b1",
+      "name": "Code - Decode base64 da página"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = items[0].json.output || items[0].json.text || '';\n\nconst match = raw.match(/\\[\\s*[\\s\\S]*?\\s*\\]/);\n\nif (!match || !match[0]) {\n  // Nenhum JSON encontrado: ignora esta página\n  return [];\n}\n\nlet parsed;\ntry {\n  parsed = JSON.parse(match[0]);\n} catch (err) {\n  // JSON mal formatado: ignora esta página\n  return [];\n}\n\nreturn parsed.map(item => ({ json: item }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        760,
+        -300
+      ],
+      "id": "171516da-b26e-47ea-bc0d-a64755fcd6b5",
+      "name": "Code - parse JSON",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Baixar PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Baixar PDF": {
+      "main": [
+        [
+          {
+            "node": "ConvertAPI - PDF para Texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ConvertAPI - PDF para Texto": {
+      "main": [
+        [
+          {
+            "node": "Code - Decode base64 da página",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code - parse JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Decode base64 da página": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - parse JSON": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "506d0752-574c-43a8-8c47-3a75b424165a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cf6060c7e23a9bee7a11da1a7604ca5e57e23f1bf505481d2ed0ae00007ea2e1"
+  },
+  "id": "KG2xsRq1sWpqOweG",
+  "tags": []
+}

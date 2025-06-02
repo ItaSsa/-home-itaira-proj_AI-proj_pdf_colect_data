@@ -49,8 +49,7 @@
           "bodyContentType": "multipart-form-data"
         },
         "sendBinaryData": true,
-        "headerParametersJson": "{\n  \"Authorization\": \"Bearer c9lU6wNcAnycMeG77MQZwzudNZXh059z\"\n}"
-      },
+        "headerParametersJson": "{\n  \"Authorization\": \"Bearer [your token here] "},
       "id": "d7d3fd64-2a46-4924-bede-00a4b694a06c",
       "name": "ConvertAPI - PDF para Texto",
       "type": "n8n-nodes-base.httpRequest",
